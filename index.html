@@ -8,73 +8,107 @@
     <style>
         body { background-color: #f3f4f6; }
         .btn-active:active { transform: scale(0.95); }
-        /* 复制成功悬浮提示样式 */
+        .btn-hover:hover { opacity: 0.9; }
+        .fold-header { cursor: pointer; user-select: none; }
         #toast {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.75);
             color: white;
             padding: 12px 24px;
             border-radius: 8px;
             font-size: 16px;
             z-index: 9999;
             display: none;
+            white-space: nowrap;
+        }
+        .input-container {
+            position: relative;
+        }
+        .paste-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #3b82f6;
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .paste-btn:active {
+            transform: scale(0.95);
         }
     </style>
 </head>
 <body class="flex justify-center p-4">
     <div class="w-full max-w-[500px] flex flex-col gap-4">
-        <h1 class="text-xl font-bold text-center py-2">1-49数字生肖累加统计器</h1>
+        <h1 class="text-xl font-bold text-center py-3 bg-white rounded-lg shadow-sm">1-49数字生肖累加统计器</h1>
+        
+        <!-- 输入框 + 内置粘贴按钮 -->
+        <div class="input-container">
+            <textarea id="inputArea" 
+                class="w-full h-[120px] p-3 border-2 border-blue-200 rounded-lg shadow-sm focus:border-blue-500 focus:outline-none resize-none pr-16"
+                placeholder="支持鸡蛇32.33、鸡蛇+32 任意格式"></textarea>
+            <div class="paste-btn btn-hover" onclick="pasteFromClipboard()">📋 粘贴</div>
+        </div>
 
-        <textarea id="inputArea" class="w-full h-[120px] p-3 border-2 border-blue-200 rounded-lg shadow-sm focus:border-blue-500 focus:outline-none" placeholder="支持鸡蛇32.33、鸡蛇+32 任意格式"></textarea>
-
+        <!-- 数字快捷面板（默认折叠） -->
         <div class="bg-white p-3 rounded-lg shadow-sm">
-            <p class="text-sm text-gray-500 mb-2 font-semibold">数字快捷输入：</p>
-            <div class="grid grid-cols-7 gap-1">
+            <div class="fold-header flex justify-between items-center" onclick="togglePanel('numPanel')">
+                <p class="text-sm text-gray-500 font-semibold">数字快捷输入</p>
+                <span id="numArrow" class="text-gray-400">▶</span>
+            </div>
+            <div id="numPanel" class="hidden mt-2 grid grid-cols-7 gap-1">
                 <script>
                     for(let i=1; i<=49; i++) {
-                        document.write(`<button onclick="appendVal('${i}')" class="btn-active bg-blue-50 text-blue-700 py-2 rounded text-sm font-medium border border-blue-100">${i}</button>`);
+                        document.write(`<button onclick="appendVal('${i}')" class="btn-active btn-hover bg-blue-50 text-blue-700 py-2 rounded text-sm font-medium border border-blue-100">${i}</button>`);
                     }
                 </script>
             </div>
-            
-            <p class="text-sm text-gray-500 mt-4 mb-2 font-semibold">生肖快捷输入：</p>
-            <div class="grid grid-cols-6 gap-1">
+        </div>
+
+        <!-- 生肖快捷面板（默认折叠） -->
+        <div class="bg-white p-3 rounded-lg shadow-sm">
+            <div class="fold-header flex justify-between items-center" onclick="togglePanel('zodiacPanel')">
+                <p class="text-sm text-gray-500 font-semibold">生肖快捷输入</p>
+                <span id="zodiacArrow" class="text-gray-400">▶</span>
+            </div>
+            <div id="zodiacPanel" class="hidden mt-2 grid grid-cols-6 gap-1">
                 <script>
                     const zodiacs = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
                     zodiacs.forEach(z => {
-                        document.write(`<button onclick="appendVal('${z}')" class="btn-active bg-orange-50 text-orange-700 py-2 rounded text-sm font-bold border border-orange-100">${z}</button>`);
+                        document.write(`<button onclick="appendVal('${z}')" class="btn-active btn-hover bg-orange-50 text-orange-700 py-2 rounded text-sm font-bold border border-orange-100">${z}</button>`);
                     });
                 </script>
             </div>
         </div>
 
         <div class="grid grid-cols-3 gap-2">
-            <button onclick="calculate()" class="btn-active bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">统计计算</button>
-            <button onclick="copyResult()" class="btn-active bg-green-500 text-white py-3 rounded-xl font-bold shadow-lg">复制结果</button>
-            <button onclick="resetAll()" class="btn-active bg-red-500 text-white py-3 rounded-xl font-bold shadow-lg">重置全部</button>
+            <button onclick="calculate()" class="btn-active btn-hover bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md">统计计算</button>
+            <button onclick="copyResult()" class="btn-active btn-hover bg-green-500 text-white py-3 rounded-xl font-bold shadow-md">复制结果</button>
+            <button onclick="resetAll()" class="btn-active btn-hover bg-red-500 text-white py-3 rounded-xl font-bold shadow-md">重置全部</button>
         </div>
 
         <div class="bg-white rounded-lg shadow-sm p-4 mb-10">
-            <h2 class="font-bold border-b pb-2 mb-3">统计结果（分组汇总）</h2>
+            <h2 class="font-bold border-b pb-2 mb-3">统计结果（智能分组）</h2>
             <div id="resultBox" class="text-sm space-y-2">
                 <div class="text-center py-10 text-gray-400">暂无统计数据</div>
             </div>
+            <div id="totalInfo" class="mt-3 text-xs text-gray-500 text-right"></div>
         </div>
     
-        <!-- 免责声明 -->
         <div class="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-500 leading-relaxed">
             <p class="font-semibold text-gray-600 mb-1">免责声明</p>
-            <p>本工具仅供个人学习、研究和娱乐使用。请勿用于任何非法活动。使用者因不当使用本工具而产生的一切后果，由使用者自行承担，与本工具开发者无关。</p>
+            <p>本工具仅供个人学习、研究和娱乐使用。请勿用于任何非法活动。使用者因不当使用本工具而产生一切后果，由使用者自行承担，与开发者无关。</p>
         </div>
     </div>
 
-    <!-- 复制成功悬浮提示 -->
     <div id="toast">✅ 复制成功</div>
-    <!-- 复制用隐藏容器 -->
-    <div id="copyDiv" style="position:absolute;opacity:0;"></div>
+    <div id="copyDiv" style="position:absolute;opacity:0;pointer-events:none;"></div>
 
     <script>
         const zodiacMap = {
@@ -83,119 +117,199 @@
             '鼠':[7,19,31,43], '猪':[8,20,32,44], '狗':[9,21,33,45],
             '鸡':[10,22,34,46], '猴':[11,23,35,47], '羊':[12,24,36,48]
         };
-        // 生肖列表，用于拆分连写
         const zodiacList = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
         const zodiacReg = new RegExp(`(${zodiacList.join('|')})`, 'g');
-
+        
         let stats = Array(50).fill(0);
+        let zodiacStats = {};
+        zodiacList.forEach(z => zodiacStats[z] = 0);
+
         let lastContent = '';
         let plainTextResult = '';
+        let isCalculating = false;
 
-        // 显示悬浮提示
+        // 折叠切换
+        function togglePanel(id) {
+            const panel = document.getElementById(id);
+            const arrow = document.getElementById(id === 'numPanel' ? 'numArrow' : 'zodiacArrow');
+            panel.classList.toggle('hidden');
+            arrow.innerText = panel.classList.contains('hidden') ? '▶' : '▼';
+        }
+
+        // 悬浮提示
         function showToast(msg) {
             const toast = document.getElementById('toast');
             toast.innerText = msg;
             toast.style.display = 'block';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 2000);
+            setTimeout(() => toast.style.display = 'none', 1800);
         }
 
+        // 追加内容
         function appendVal(val) {
             const area = document.getElementById('inputArea');
             area.value += (area.value ? ' ' : '') + val;
             area.scrollTop = area.scrollHeight;
         }
 
-        // ========== 核心修复：每次点统计 = 先清空旧数据，重新计算 ==========
-        function calculate() {
-            const currentContent = document.getElementById('inputArea').value.trim();
+        // 判断是否含数字
+        function hasNumber(input) {
+            return /\d+/.test(input);
+        }
 
-            // 1. 内容没变 → 不重复计算
+        // ==============================================
+        // 一键粘贴（苹果安全版，无权限问题）
+        // ==============================================
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) {
+                    showToast("📋 剪贴板为空");
+                    return;
+                }
+                const area = document.getElementById('inputArea');
+                area.value = text.trim();
+                showToast("✅ 粘贴成功");
+                setTimeout(() => calculate(), 300); // 粘贴后自动统计
+            } catch (err) {
+                showToast("❌ 粘贴失败，请手动粘贴");
+            }
+        }
+
+        // 核心统计
+        function calculate() {
+            if (isCalculating) return;
+            isCalculating = true;
+            
+            const currentContent = document.getElementById('inputArea').value.trim();
             if (currentContent === lastContent) {
+                isCalculating = false;
                 return;
             }
-            // 2. 空内容 → 不计算
             if (!currentContent) {
                 stats = Array(50).fill(0);
+                zodiacList.forEach(z => zodiacStats[z] = 0);
+                lastContent = '';
                 render();
+                isCalculating = false;
                 return;
             }
 
-            // 3. ✅ 关键：每次都先清空统计数据，重新算（解决一直累加问题）
             stats = Array(50).fill(0);
+            zodiacList.forEach(z => zodiacStats[z] = 0);
 
-            // 4. 拆分连写生肖 + 拆分所有分隔符
-            let text = currentContent;
-            text = text.replace(zodiacReg, ' $1 '); // 鸡蛇 → 鸡 蛇
-            const tokens = text.split(/[\n\s,，、+\.。]+/).filter(item => item);
+            let text = currentContent.replace(zodiacReg, ' $1 ');
+            const tokens = text.split(/[\n\s,，、+\.。]+/).filter(Boolean);
 
-            // 5. 正常统计
             tokens.forEach(token => {
                 if (zodiacMap[token]) {
+                    zodiacStats[token]++;
                     zodiacMap[token].forEach(num => stats[num]++);
                 } else {
                     const num = parseInt(token);
-                    if (!isNaN(num) && num >= 1 && num <= 49) {
-                        stats[num]++;
-                    }
+                    if (!isNaN(num) && num >= 1 && num <= 49) stats[num]++;
                 }
             });
 
-            // 6. 记录本次内容，防止重复计算
             lastContent = currentContent;
             render();
+            isCalculating = false;
         }
 
+        // 渲染结果（智能模式：有数字显数字，无数字显生肖）
         function render() {
             const container = document.getElementById('resultBox');
-            let data = {};
-            for (let i = 1; i <= 49; i++) {
-                if (stats[i] > 0) {
-                    data[i] = stats[i];
-                }
-            }
+            const totalInfo = document.getElementById('totalInfo');
+            const input = document.getElementById('inputArea').value.trim();
+            const hasNum = hasNumber(input);
 
-            if (Object.keys(data).length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-gray-400">暂无统计数据</div>';
-                plainTextResult = '';
-                return;
-            }
-
-            let group = {};
-            for (let num in data) {
-                const count = data[num];
-                if (!group[count]) group[count] = [];
-                group[count].push(Number(num));
-            }
-
-            const sortedCount = Object.keys(group).sort((a, b) => b - a);
-            let html = '';
+            plainTextResult = '';
             let textLines = [];
+            let html = '';
 
-            sortedCount.forEach(count => {
-                const numList = group[count].sort((a, b) => a - b);
-                const numStr = numList.join('，');
-                const lineText = `${numStr}（${numList.length}个）${count}次`;
-                textLines.push(lineText);
-                html += `<div class="border-b border-gray-100 py-1">
-                            <span class="text-gray-700">${numStr}</span>
-                            <span class="text-gray-400">（${numList.length}个）</span>
-                            <span class="font-bold text-blue-600 ml-2">${count}次</span>
-                        </div>`;
-            });
+            if (hasNum) {
+                let data = {};
+                let totalNumCount = 0;
+                let totalTimes = 0;
+
+                for (let i=1; i<=49; i++) {
+                    if (stats[i] > 0) {
+                        data[i] = stats[i];
+                        totalNumCount++;
+                        totalTimes += stats[i];
+                    }
+                }
+
+                if (Object.keys(data).length === 0) {
+                    container.innerHTML = '<div class="text-center py-10 text-gray-400">暂无统计数据</div>';
+                    totalInfo.innerText = '';
+                    return;
+                }
+
+                let group = {};
+                for (let num in data) {
+                    const c = data[num];
+                    if (!group[c]) group[c] = [];
+                    group[c].push(Number(num));
+                }
+
+                const sorted = Object.keys(group).sort((a,b)=>b-a);
+                sorted.forEach(count => {
+                    const list = group[count].sort((a,b)=>a-b);
+                    const str = list.join('，');
+                    const line = `${str}（${list.length}个）${count}次`;
+                    textLines.push(line);
+                    html += `<div class="border-b border-gray-100 py-1.5">
+                        <span class="text-gray-700">${str}</span>
+                        <span class="text-gray-400">（${list.length}个）</span>
+                        <span class="font-bold text-blue-600 ml-2">${count}次</span>
+                    </div>`;
+                });
+
+                totalInfo.innerText = `共 ${totalNumCount} 个数字，累计 ${totalTimes} 次`;
+            } else {
+                let validZodiac = [];
+                let totalZodiac = 0;
+
+                zodiacList.forEach(z => {
+                    if (zodiacStats[z] > 0) {
+                        validZodiac.push({ name: z, count: zodiacStats[z] });
+                        totalZodiac += zodiacStats[z];
+                    }
+                });
+
+                if (validZodiac.length === 0) {
+                    container.innerHTML = '<div class="text-center py-10 text-gray-400">暂无统计数据</div>';
+                    totalInfo.innerText = '';
+                    return;
+                }
+
+                validZodiac.sort((a,b) => b.count - a.count);
+                validZodiac.forEach(item => {
+                    const line = `${item.name}：${item.count}次`;
+                    textLines.push(line);
+                    html += `<div class="border-b border-gray-100 py-1.5">
+                        <span class="text-gray-700 font-medium">${item.name}</span>
+                        <span class="font-bold text-blue-600 ml-2">${item.count}次</span>
+                    </div>`;
+                });
+
+                totalInfo.innerText = `共 ${validZodiac.length} 个生肖，累计 ${totalZodiac} 次`;
+            }
 
             plainTextResult = textLines.join('\n');
             container.innerHTML = html;
         }
 
-        // 复制函数（不弹输入法+悬浮提示）
-        function copyResult() {
+        // 复制结果
+        async function copyResult() {
             if (!plainTextResult) {
                 showToast('⚠️ 暂无数据');
                 return;
             }
             try {
+                await navigator.clipboard.writeText(plainTextResult);
+                showToast('✅ 复制成功');
+            } catch (e) {
                 const copyDiv = document.getElementById('copyDiv');
                 copyDiv.innerText = plainTextResult;
                 const range = document.createRange();
@@ -206,17 +320,19 @@
                 document.execCommand('copy');
                 sel.removeAllRanges();
                 showToast('✅ 复制成功');
-            } catch (err) {
-                showToast('❌ 复制失败');
             }
         }
 
+        // 重置全部
         function resetAll() {
             stats = Array(50).fill(0);
+            zodiacList.forEach(z => zodiacStats[z] = 0);
             lastContent = '';
             plainTextResult = '';
             document.getElementById('inputArea').value = '';
+            document.getElementById('totalInfo').innerText = '';
             render();
+            showToast('🔄 已重置');
         }
     </script>
 </body>
